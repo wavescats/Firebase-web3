@@ -5,6 +5,7 @@ import Auth from "./routes/Auth";
 import Profile from "./routes/Profile";
 import { authService } from "./firebase";
 import Nav from "./components/Nav";
+import { updateProfile } from "firebase/auth";
 
 function App() {
   const [init, setInit] = useState(false);
@@ -15,24 +16,40 @@ function App() {
     authService.onAuthStateChanged(user => {
       if (user) {
         setIsLogin(true);
-        setUserObj(user);
-      } else {
-        setIsLogin(false);
+        setUserObj({
+          displayName: user.displayName,
+          uid: user.uid,
+          updateProfile: updateProfile(user, { displayName: user.displayName }),
+        });
       }
       setInit(true);
     });
   }, []);
 
+  const refreshUser = () => {
+    const user = authService.currentUser;
+    setUserObj({
+      displayName: user.displayName,
+      uid: user.uid,
+      updateProfile: updateProfile(user, { displayName: user.displayName }),
+    });
+  };
+
   return (
     <>
       <Router>
-        {isLogin && <Nav />}
+        {isLogin && <Nav userObj={userObj} />}
         {init ? (
           <Routes>
             {isLogin ? (
               <>
                 <Route path="/" element={<Home userObj={userObj} />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <Profile userObj={userObj} refreshUser={refreshUser} />
+                  }
+                />
               </>
             ) : (
               <Route path="/" element={<Auth />} />
